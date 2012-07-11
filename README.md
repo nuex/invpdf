@@ -22,16 +22,13 @@ Ubuntu or ArchLinux.
 
 ## DESCRIPTION
 
-invpdf works by parsing a text file database of customers and the invoice text
-file, then using various LaTeX utilities, generates the result PDF.
-
 The following command generates a PDF using the passed in customers database
 and invoice:
 
     invpdf -c=example/customers.txt example/0001.txt example/0001.pdf
 
-If you set the INV_CUSTOMERS environment variable to the path of your customers database, you can
-generate invoice with the following path:
+Setting INV_CUSTOMERS to the customers.txt path to save having to pass that
+argument:
 
     invpdf example/0001.txt example/0001.pdf
 

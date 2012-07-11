@@ -26,7 +26,12 @@ if [ ! "$closing" ] && [ "$INV_CLOSING" ]; then
   closing="$INV_CLOSING"
 fi
 
-[ ! -f "$invoice" ] && _zod_error "error: invoice \"${invoice}\" doesn't exist"
+if [ "$invoice" == "" ] || [ "$output" == "" ]; then
+  echo "usage: invpdf [options] invoice.txt output.pdf"
+  exit 1
+fi
+
+[ ! -f "$invoice" ] && _inv_error "error: invoice \"${invoice}\" doesn't exist"
 
 tmpfile="$(mktemp -t invoice-XXXXXX.tex)"
 ext="tex"
