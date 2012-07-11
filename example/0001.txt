@@ -1,0 +1,17 @@
+;
+; INVOICE
+;
+
+INV#0001 2012-07-02 ACME COMPANY ; test
+
+Software Services
+  CMS Project              10h @ $70.00 
+
+IT Services
+  Equipment Costs               $100.00
+  Installation              1h @ $50.00
+
+; Discount
+Overpayed last month           -$100.00
+
+; TOTAL: $750

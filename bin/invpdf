@@ -1,0 +1,43 @@
+#!/bin/sh
+
+_inv_error() {
+  echo -e ">>> ERROR: $*" >&2
+  exit 1
+}
+
+while getopts c: opt; do
+  case "$opt" in
+    c) cfile="$OPTARG";;
+    *) ;;
+  esac
+  shift $((${OPTIND} - 1))
+done
+
+invoice="$1"; shift
+output="$1"; shift
+
+[ "$INV_CUSTOMERS" ] && cfile="$INV_CUSTOMERS"
+
+if [ ! "$cfile" ]; then 
+  _inv_error "customer database not found, please set the INV_CUSTOMERS environment variable to the path of your customers database or use the -c option"
+fi
+
+if [ ! "$closing" ] && [ "$INV_CLOSING" ]; then
+  closing="$INV_CLOSING"
+fi
+
+[ ! -f "$invoice" ] && _zod_error "error: invoice \"${invoice}\" doesn't exist"
+
+tmpfile="$(mktemp -t invoice-XXXXXX.tex)"
+ext="tex"
+fname="${tmpfile##*/}"
+fname="${fname%.$ext}"
+prevdir="$(pwd)"
+awk -v closing="$closing" \
+    -f "$INV_AWKLIB/invoice.awk" \
+    "$cfile" "$invoice" > "$tmpfile" &&
+  cd "$(dirname $tmpfile)" &&
+  pdflatex "$tmpfile" &&
+  cd "$prevdir" &&
+  mv "/tmp/${fname}.pdf" "$output" &&
+  rm "$tmpfile"
