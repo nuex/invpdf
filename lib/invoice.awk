@@ -27,10 +27,9 @@ END {
   print "\\begin{document}"
   print "  \\begin{letter}{" customer_address "}"
   print "    \\opening{INVOICE \\#" inv_number "}"
-  print "    \\begin{invoice}{USD}{0}"
   print_projects()
   print_discounts()
-  print "    \\end{invoice}"
+  print "    \\textbf
   print "    \\closing{" closing "}"
   print "  \\end{letter}"
   print "\\end{document}"
@@ -135,7 +134,7 @@ function parse_project() {
   }
 }
 
-function parse_line_item(     rate, units, desc, desc_stop) {
+function parse_line_item(     rate, units, amount, subtotal, desc, desc_stop) {
   if (proj) {
     if ($NF ~ /^[\-]?[\$]?[0-9]/) {
       rate = amount($NF)
@@ -162,6 +161,11 @@ function parse_line_item(     rate, units, desc, desc_stop) {
     projects[prcnt, "line_items", lcnt, "desc"] = desc
     projects[prcnt, "line_items", lcnt, "rate"] = rate
     projects[prcnt, "line_items", lcnt, "units"] = units
+    amount = rate * units
+    projects[prcnt, "line_items", lcnt, "amount"] = amount
+    subtotal = projects[prcnt, "subtotal"]
+    if (!subtotal) subtotal = 0
+    projects[prcnt, "subtotal"] = subtotal + amount
     projects[prcnt, "lcnt"] = lcnt
   } else {
     error("expected project but got line item on line " FNR)
@@ -185,15 +189,20 @@ function print_projects() {
 
 function print_project(i,     title, description, rate, units) {
   title = projects[i, "desc"]
-  print "      \\ProjectTitle{" title "}%"
+  print "      \\multicolumn{5}{c}{\\textbf{\\large" title "}%"
 
   # print project line items
   for (j = 1; j <= projects[i, "lcnt"]; j++) {
     description = projects[i, "line_items", j, "desc"]  
     rate = projects[i, "line_items", j, "rate"]
     units = projects[i, "line_items", j, "units"]
-    print_line_item(description, rate, units)
+    amount = projects[i, "line_items", j, "amount"]
+    print_line_item(description, rate, units, amount)
   }
+
+  # print project subtotal
+  subtotal = projects[i, "subtotal"]
+  print "       \\noindent\\textbf{Subtotal " title "}}&&{}&&{}&&{" subtotal "}"
 }
 
 # print discount
@@ -202,8 +211,8 @@ function print_discount(description, amount) {
 }
 
 # print line item
-function print_line_item(description, rate, units) {
-  print "        \\Fee{" description "}{" rate "}{" units "}"
+function print_line_item(description, rate, units, amount) {
+  print "        \\noindent\\textbf{" description "}&&{" rate "}&&{" units "}&&{" amount "}"
 }
 
 function address() {
