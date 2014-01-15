@@ -9,9 +9,8 @@ Generate PDF invoices from text files.
 
 ## DEPENDENCIES
 
-LaTeX and the latex-invoice package is required to generate the PDF. Installing
-these is usually as easy as installing the texlive-latex-extra package in
-Ubuntu or ArchLinux.
+[pdflatex](http://www.tug.org/applications/pdftex/) is required. Most Linux
+distributions should have this package available.
 
 ## INSTALL
 

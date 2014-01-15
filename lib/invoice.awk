@@ -20,17 +20,22 @@ FNR == 1 { fcnt++ }
 END {
   if (errors) exit 1
   print "\\documentclass{letter}"
-  print "\\usepackage{invoice}"
+  print "\\usepackage{longtable}"
   print "\\address{" address() "}"
   print "\\date{" date "}"
   print ""
   print "\\begin{document}"
   print "  \\begin{letter}{" customer_address "}"
   print "    \\opening{INVOICE \\#" inv_number "}"
-  print "    \\begin{invoice}{USD}{0}"
+  print "    \\renewcommand*{\\arraystretch}{1.4}"
+  print "    \\begin{longtable}{p{5cm}lrrr}"
   print_projects()
   print_discounts()
-  print "    \\end{invoice}"
+  print "     \\hline"
+  print "     \\hline"
+  grandtotal_to_usd = sprintf("%0.2f", grandtotal/100)
+  print "     \\textbf{Total}&& & & {" grandtotal_to_usd "}"
+  print "    \\end{longtable}"
   print "    \\closing{" closing "}"
   print "  \\end{letter}"
   print "\\end{document}"
@@ -110,7 +115,7 @@ function parse_discount(  i) {
   # look for the amount field
   for (i = 1; i <= NF; i++) {
     if ($i ~ /^-[0-9|\$]/) {
-      amt = amount($i)
+      amt = strip_amount($i)
       discounts[dcnt, "amt"] = amt
 
       # previous fields are the description
@@ -135,10 +140,10 @@ function parse_project() {
   }
 }
 
-function parse_line_item(     rate, units, desc, desc_stop) {
+function parse_line_item(     rate, units, amount, subtotal, desc, desc_stop) {
   if (proj) {
     if ($NF ~ /^[\-]?[\$]?[0-9]/) {
-      rate = amount($NF)
+      rate = strip_amount($NF)
     } else {
       error("expected valid amount on line " FNR)
     }
@@ -162,6 +167,13 @@ function parse_line_item(     rate, units, desc, desc_stop) {
     projects[prcnt, "line_items", lcnt, "desc"] = desc
     projects[prcnt, "line_items", lcnt, "rate"] = rate
     projects[prcnt, "line_items", lcnt, "units"] = units
+    amount = rate * units
+    projects[prcnt, "line_items", lcnt, "amount"] = amount
+    subtotal = projects[prcnt, "subtotal"]
+    if (!subtotal) subtotal = 0
+    projects[prcnt, "subtotal"] = subtotal + amount
+    if (!grandtotal) grandtotal = 0
+    grandtotal = grandtotal + amount
     projects[prcnt, "lcnt"] = lcnt
   } else {
     error("expected project but got line item on line " FNR)
@@ -185,25 +197,35 @@ function print_projects() {
 
 function print_project(i,     title, description, rate, units) {
   title = projects[i, "desc"]
-  print "      \\ProjectTitle{" title "}%"
+  print "      \\multicolumn{5}{c}{\\textbf{\\large{" title "}}}\\\\"
+  print "      \\noindent\\textbf{Activity}&& Rate/Unit & Count & Amount\\\\"
+  print "      \\hline"
 
   # print project line items
   for (j = 1; j <= projects[i, "lcnt"]; j++) {
     description = projects[i, "line_items", j, "desc"]  
     rate = projects[i, "line_items", j, "rate"]
     units = projects[i, "line_items", j, "units"]
-    print_line_item(description, rate, units)
+    amount = projects[i, "line_items", j, "amount"]
+    print_line_item(description, rate, units, amount)
   }
+
+  # print project subtotal
+  subtotal = projects[i, "subtotal"]
+  print "       \\noindent{Subtotal " title "}&& & & {" subtotal "}\\\\"
 }
 
 # print discount
 function print_discount(description, amount) {
-  print "      \\Discount{" description "}{" amount "}"
+  amount = sprintf("%0.2f", amount/100)
+  print "      \\noindent{" description "}&&{" amount "}"
 }
 
 # print line item
-function print_line_item(description, rate, units) {
-  print "        \\Fee{" description "}{" rate "}{" units "}"
+function print_line_item(description, rate, units, amount) {
+  rate = sprintf("%.2f", rate/100)
+  amount = sprintf("%.2f", amount/100)
+  print "        \\noindent{" description "}&&" rate " & " units " & " amount "\\\\"
 }
 
 function address() {
@@ -242,8 +264,9 @@ function join_fields(start, finish,     s, i) {
   return s
 }
 
-function amount(s) {
+function strip_amount(s) {
   sub(/[\$|,]/, "", s)
+  sub(/\./, "", s)
   return s
 }
 
