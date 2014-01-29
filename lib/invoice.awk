@@ -211,7 +211,7 @@ function print_project(i,     title, description, rate, units) {
   }
 
   # print project subtotal
-  subtotal = projects[i, "subtotal"]
+  subtotal = sprintf("%0.2f", projects[i, "subtotal"]/100)
   print "       \\noindent{Subtotal " title "}&& & & {" subtotal "}\\\\"
 }
 
