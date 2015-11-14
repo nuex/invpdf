@@ -265,8 +265,9 @@ function join_fields(start, finish,     s, i) {
 }
 
 function strip_amount(s) {
-  sub(/[\$|,]/, "", s)
+  sub(/\$/, "", s)
   sub(/\./, "", s)
+  sub(/,/, "", s)
   return s
 }
 
